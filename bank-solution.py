@@ -24,15 +24,15 @@ if __name__ == '__main__':
     # Model Training
     knn = KNeighborsClassifier(n_neighbors=5)
     knn.fit(X_train, y_train)
-    print(knn.score(X_test, y_test))
-    print(confusion_matrix(y_test, knn.predict(X_test)))
+    print('KNN train score: ', knn.score(X_train, y_train))
+    print('KNN Accuracy: ', knn.score(X_test, y_test))
 
     rf = RandomForestClassifier(n_estimators=100)
     rf.fit(X_train, y_train)
-    print(rf.score(X_test, y_test))
-    print(confusion_matrix(y_test, rf.predict(X_test)))
+    print('RF train score: ', rf.score(X_train, y_train))
+    print('RF Accuracy: ', rf.score(X_test, y_test))
 
-    svm = SVC(probability=True)
+    svm = SVC()
     svm.fit(X_train, y_train)
-    print(svm.score(X_test, y_test))
-    print(confusion_matrix(y_test, svm.predict(X_test)))
+    print('SVM train score: ', svm.score(X_train, y_train))
+    print('SVM Accuracy: ', svm.score(X_test, y_test))
