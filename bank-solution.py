@@ -1,14 +1,33 @@
+from random import random
+
 import matplotlib.pyplot as plt
 import pandas as pd
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import ConfusionMatrixDisplay, recall_score
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.metrics import recall_score
+from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler, Normalizer, LabelEncoder
+from sklearn.preprocessing import (LabelEncoder, MaxAbsScaler, MinMaxScaler,
+                                   Normalizer, RobustScaler, StandardScaler)
 from sklearn.svm import SVC
-from sklearn.cluster import KMeans
-from sklearn.utils import multiclass
+
+
+def eda(df):
+    print(df.info())
+    print(df.describe())
+    count_unique_values_if_categorical(df)
+    df.hist(bins=50)
+    plt.show()
+    print(df.groupby('y').describe())
+    print(df.groupby('y').agg(['mean']).unstack().plot(kind='bar'))
+    plt.show()
+
+
+def count_unique_values_if_categorical(df):
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            print(col, ': ', df[col].nunique())
 
 
 def base_evaluation(models, scalers, X, y):
@@ -39,13 +58,16 @@ def cross_evaluation(models, scalers, X, y):
                 X_scaled = scaler.fit_transform(X)
             else:
                 X_scaled = X
-            scores = cross_val_score(
-                model, X_scaled, y, cv=5, scoring='recall')
-            print('Recall: ', scores.mean())
+            scores = cross_validate(
+                model, X_scaled, y, cv=3, scoring=('accuracy', 'recall'), n_jobs=-1)
+            print('Accuracy: ', scores['test_accuracy'].mean())
+            print('Recall: ', scores['test_recall'].mean())
 
 
 if __name__ == '__main__':
     df = pd.read_csv('bank/bank-full.csv', sep=';')
+
+    # eda(df)
 
     # Common Data Preprocessing
     for column in df.columns:
@@ -53,17 +75,26 @@ if __name__ == '__main__':
             le = LabelEncoder()
             df[column] = le.fit_transform(df[column])
 
+    # iso = IsolationForest(contamination=0.05)
+    # X = df.drop('y', axis=1)
+    # outlier = iso.fit_predict(X)
+    # df['outlier'] = outlier
+    # df.drop(df[df['outlier'] == -1].index, inplace=True)
+    # df.drop('outlier', axis=1, inplace=True)
+
     X = df.drop('y', axis=1)
     y = df['y']
 
+    rus = RandomUnderSampler(sampling_strategy='majority')
+    X, y = rus.fit_resample(X, y)
+
     # Models
-    lr = LogisticRegression(multi_class='ovr', solver='liblinear')
-    k_means = KMeans()
+    lr = LogisticRegression(solver='liblinear')
     knn = KNeighborsClassifier(n_neighbors=5)
     rf = RandomForestClassifier(n_estimators=200)
     svm = SVC()
 
-    models = [lr, k_means, knn, rf, svm]
+    models = [lr, knn, rf, svm]
 
     # Preprocessing
     scaler = StandardScaler()
